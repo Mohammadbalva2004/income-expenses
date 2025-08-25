@@ -1,6 +1,6 @@
-import 'package:Acountpro/model/user.dart';
-import 'package:Acountpro/utils/pdf_generator.dart';
 import 'package:flutter/material.dart';
+import 'package:multi_user_expense_app/model/user.dart';
+import '../utils/pdf_generator.dart';
 import '../widgets/dashboard_card.dart';
 import '../widgets/user_card.dart';
 import '../database/database_helper.dart';
@@ -26,6 +26,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double totalExpense = 0.0;
   bool isLoading = true;
 
+  Map<int, double> userIncomes = {};
+  Map<int, double> userExpenses = {};
+
   @override
   void initState() {
     super.initState();
@@ -40,18 +43,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final income = await _databaseHelper.getTotalIncome();
       final expense = await _databaseHelper.getTotalExpense();
 
+      // per-user income/expense
+      Map<int, double> incomes = {};
+      Map<int, double> expenses = {};
+      for (var u in loadedUsers) {
+        incomes[u.id!] = await _databaseHelper.getUserIncome(u.id!);
+        expenses[u.id!] = await _databaseHelper.getUserExpense(u.id!);
+      }
+
       setState(() {
         users = loadedUsers;
         totalIncome = income;
         totalExpense = expense;
+        userIncomes = incomes;
+        userExpenses = expenses;
         isLoading = false;
       });
     } catch (e) {
       setState(() => isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading data: $e')),
+        );
       }
     }
   }
@@ -62,14 +75,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .where(
           (user) =>
               user.name.toLowerCase().contains(
-                _searchController.text.toLowerCase(),
-              ) ||
+                    _searchController.text.toLowerCase(),
+                  ) ||
               user.mobile.contains(_searchController.text),
         )
         .toList();
   }
 
   double get totalBalance => totalIncome - totalExpense;
+
+  Future<void> _exportToPDF() async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Text('Generating PDF...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final filePath = await PDFGenerator.generateDashboardPDF(
+        users: users,
+        totalIncome: totalIncome,
+        totalExpense: totalExpense,
+        userIncomes: userIncomes,
+        userExpenses: userExpenses,
+      );
+
+      Navigator.pop(context); // Close loading dialog
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF saved successfully!\nLocation: $filePath'),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'OK',
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context); // Close loading dialog
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error exporting PDF: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   Future<void> _showAddUserDialog() async {
     showDialog(
@@ -137,7 +202,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 try {
                   await _databaseHelper.insertUser(newUser);
-                  await _loadData(); // Reload data
+                  await _loadData();
 
                   _nameController.clear();
                   _mobileController.clear();
@@ -296,9 +361,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               onPressed: () async {
                 try {
-                  // ✅ delete user + transactions
                   await _databaseHelper.deleteUserWithTransactions(user.id!);
-
                   await _loadData();
 
                   Navigator.pop(context);
@@ -328,35 +391,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Future<void> _exportToPDF() async {
-    try {
-      final filePath = await PDFGenerator.generateDashboardPDF(
-        users: users,
-        totalIncome: totalIncome,
-        totalExpense: totalExpense,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('PDF saved successfully!\nLocation: $filePath'),
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error exporting PDF: $e')));
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading dashboard...'),
+            ],
+          ),
+        ),
+      );
     }
 
     return Scaffold(
@@ -373,7 +422,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.refresh),
           ),
           IconButton(
-            tooltip: 'Export PDF',
+            tooltip: 'Export Dashboard PDF',
             onPressed: _exportToPDF,
             icon: const Icon(Icons.picture_as_pdf_outlined),
           ),
@@ -384,17 +433,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             const SizedBox(height: 10),
 
-            // Dashboard cards
             DashboardCard(
               icon: Icons.people,
-              color: Colors.purpleAccent,
+              color: Colors.purple,
               title: "Total Users",
               amount: users.length.toString(),
             ),
             DashboardCard(
               icon: Icons.trending_up,
               color: Colors.green,
-              title: "Total Incomes",
+              title: "Total Income",
               amount: "₹${totalIncome.toStringAsFixed(0)}",
             ),
             DashboardCard(
@@ -405,8 +453,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             DashboardCard(
               icon: Icons.account_balance_wallet,
-              color: Colors.blue,
-              title: "Total Balance",
+              color: totalBalance >= 0 ? Colors.blue : Colors.orange,
+              title: "Net Balance",
               amount: "₹${totalBalance.toStringAsFixed(0)}",
             ),
 
@@ -434,7 +482,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             SizedBox(width: 5),
                             Text(
                               "Add User",
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
@@ -472,20 +523,74 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "All Users",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "All Users",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text("Manage user accounts and generate reports"),
+                        ],
+                      ),
+                      if (users.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            "${filteredUsers.length} users",
+                            style: TextStyle(
+                              color: Colors.blue.shade700,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                  const Text("Manage and view user accounts"),
                   const SizedBox(height: 10),
-
                   if (filteredUsers.isEmpty)
-                    const Center(
+                    Center(
                       child: Padding(
-                        padding: EdgeInsets.all(20.0),
-                        child: Text(
-                          "No users found",
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        padding: const EdgeInsets.all(40.0),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.people_outline,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              users.isEmpty ? "No users yet" : "No users found",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              users.isEmpty
+                                  ? "Add your first user to get started"
+                                  : "Try adjusting your search",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     )
@@ -513,6 +618,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

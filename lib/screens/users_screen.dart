@@ -1,7 +1,6 @@
-import 'package:Acountpro/model/transaction.dart';
-import 'package:Acountpro/model/user.dart';
-
 import 'package:flutter/material.dart';
+import 'package:multi_user_expense_app/model/transaction.dart';
+import 'package:multi_user_expense_app/model/user.dart';
 import '../widgets/dashboard_card.dart';
 import '../widgets/transaction_tile.dart';
 import '../database/database_helper.dart';
@@ -177,10 +176,9 @@ class _UsersScreenState extends State<UsersScreen> {
                             final newTransaction = Transaction(
                               userId: widget.user.id!,
                               amount: double.parse(amountController.text),
-                              description:
-                                  noteController.text.isEmpty
-                                      ? "No description"
-                                      : noteController.text,
+                              description: noteController.text.isEmpty
+                                  ? "No description"
+                                  : noteController.text,
                               type: transactionType,
                               date: DateTime.now(),
                             );
@@ -346,10 +344,9 @@ class _UsersScreenState extends State<UsersScreen> {
                               id: transaction.id,
                               userId: transaction.userId,
                               amount: double.parse(amountController.text),
-                              description:
-                                  noteController.text.isEmpty
-                                      ? "No description"
-                                      : noteController.text,
+                              description: noteController.text.isEmpty
+                                  ? "No description"
+                                  : noteController.text,
                               type: transactionType,
                               date: transaction.date, // Keep original date
                             );
@@ -408,53 +405,52 @@ class _UsersScreenState extends State<UsersScreen> {
   void _showDeleteConfirmation(BuildContext context, Transaction transaction) {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Delete Transaction'),
-            content: Text(
-              'Are you sure you want to delete this transaction?\n\n'
-              '${transaction.description}\n'
-              '₹${transaction.amount.toStringAsFixed(2)}',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await _databaseHelper.deleteTransaction(transaction.id!);
-                    await _loadTransactions();
-
-                    Navigator.pop(context);
-
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Transaction deleted successfully!'),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    Navigator.pop(context);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error deleting transaction: $e'),
-                        ),
-                      );
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Delete'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Transaction'),
+        content: Text(
+          'Are you sure you want to delete this transaction?\n\n'
+          '${transaction.description}\n'
+          '₹${transaction.amount.toStringAsFixed(2)}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await _databaseHelper.deleteTransaction(transaction.id!);
+                await _loadTransactions();
+
+                Navigator.pop(context);
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Transaction deleted successfully!'),
+                    ),
+                  );
+                }
+              } catch (e) {
+                Navigator.pop(context);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error deleting transaction: $e'),
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -496,11 +492,10 @@ class _UsersScreenState extends State<UsersScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed:
-              () => Navigator.pop(
-                context,
-                true,
-              ), // Return true to indicate data may have changed
+          onPressed: () => Navigator.pop(
+            context,
+            true,
+          ), // Return true to indicate data may have changed
         ),
         title: Column(
           children: [
@@ -524,6 +519,7 @@ class _UsersScreenState extends State<UsersScreen> {
           IconButton(
             tooltip: 'Export PDF',
             onPressed: _exportUserToPDF,
+            // onPressed: (){},
             icon: const Icon(Icons.picture_as_pdf_outlined),
           ),
           CircleAvatar(
@@ -632,7 +628,6 @@ class _UsersScreenState extends State<UsersScreen> {
                   ),
                   Text("${filteredTransactions().length} transactions found"),
                   const SizedBox(height: 10),
-
                   if (filteredTransactions().isEmpty)
                     const Center(
                       child: Padding(

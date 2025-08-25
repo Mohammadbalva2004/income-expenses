@@ -1,6 +1,6 @@
-import 'package:Acountpro/model/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:multi_user_expense_app/model/transaction.dart';
 
 class TransactionTile extends StatelessWidget {
   final Transaction transaction;

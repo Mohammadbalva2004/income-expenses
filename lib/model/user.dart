@@ -1,8 +1,8 @@
 class User {
-  final int? id; // Changed to int for SQLite auto-increment
+  final int? id;
   final String name;
   final String mobile;
-  final DateTime joinDate; // Changed to DateTime for proper date handling
+  final DateTime joinDate;
   final double balance;
   final int transactions;
 
@@ -30,8 +30,8 @@ class User {
       name: map['name'] ?? '',
       mobile: map['mobile'] ?? '',
       joinDate: DateTime.fromMillisecondsSinceEpoch(map['joinDate']),
-      balance: 0.0, // Will be calculated from transactions
-      transactions: 0, // Will be calculated from transactions
+      balance: 0.0,
+      transactions: 0,
     );
   }
 

@@ -1,6 +1,7 @@
-import 'package:Acountpro/model/user.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:multi_user_expense_app/model/user.dart';
+
 
 class UserCard extends StatelessWidget {
   final User user;
@@ -69,11 +70,22 @@ class UserCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  "₹${user.balance.toStringAsFixed(0)}",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: user.balance >= 0
+                        ? Colors.green.shade50
+                        : Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    "₹${user.balance.toStringAsFixed(0)}",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: user.balance >= 0 ? Colors.green : Colors.red,
+                    ),
                   ),
                 ),
                 Text(
@@ -88,14 +100,14 @@ class UserCard extends StatelessWidget {
                       onTap: onTap,
                       child: Container(
                         height: 35,
-                        width: 80,
+                        width: 70,
                         decoration: BoxDecoration(
                           color: Colors.blue,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Center(
                           child: Text(
-                            "Dashboard",
+                            "View",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -105,6 +117,7 @@ class UserCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 4),
                     if (onEdit != null) ...[
                       const SizedBox(width: 4),
                       GestureDetector(

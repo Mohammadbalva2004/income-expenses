@@ -1,5 +1,6 @@
-import 'package:Acountpro/model/transaction.dart';
-import 'package:Acountpro/model/user.dart';
+
+import 'package:multi_user_expense_app/model/transaction.dart';
+import 'package:multi_user_expense_app/model/user.dart';
 import 'package:sqflite/sqflite.dart' hide Transaction;
 import 'package:path/path.dart';
 

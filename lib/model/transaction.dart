@@ -1,11 +1,11 @@
 enum TransactionType { income, expense }
 
 class Transaction {
-  final int? id; // Changed to int for SQLite auto-increment
-  final int userId; // Changed to int to match User id
+  final int? id;
+  final int userId;
   final double amount;
-  final String description; // Renamed from note for clarity
-  final TransactionType type; // Using enum for type safety
+  final String description;
+  final TransactionType type;
   final DateTime date;
 
   Transaction({
